@@ -1,9 +1,5 @@
 from random import randint
 
-text_coordinates = '''Введите, через пробел, координаты для размещения корабля. 
-Например 1 2, цифры должны быть от 1 до 6 включительно!
-Первая строка, вторая столбец.\n'''
-
 
 class BoardOutException(Exception):
     pass
@@ -60,10 +56,17 @@ class Board:
         self.count_live_ship = 0
         self.hid = hid
         self.board = None
+        # self.board = [[Dot(i, j) for i in range(Board.LEN_MATRIX)] for j in range(Board.LEN_MATRIX)]
         self.create_empty_board()
 
     def create_empty_board(self):
         self.board = [[Dot(i, j) for i in range(Board.LEN_MATRIX)] for j in range(Board.LEN_MATRIX)]
+
+    @staticmethod
+    def out(point):
+        print('Запуск out')
+        x, y = point
+        return x > Board.LEN_MATRIX or y > Board.LEN_MATRIX
 
     def add_ship(self, ship):
         if ship.dot_start.point[not ship.vertical] + ship.length > Board.LEN_MATRIX or \
@@ -109,33 +112,6 @@ class Board:
                     else:
                         continue
 
-    @staticmethod
-    def out(point):
-        print('Запуск out')
-        x, y = point
-        return x > Board.LEN_MATRIX or y > Board.LEN_MATRIX
-
-    def shot(self, point):
-        x, y = point
-        try:
-            if Board.out(point):
-                raise IndexError
-            else:
-
-                try:
-                    if self.board[x][y].shot:
-                        raise Exception
-                    else:
-                        self.board[x][y].shot = True
-                        self.board[x][y].hid = False
-                        self.board[x][y].mark = self.miss
-
-                except Exception as e:
-                    print(e, 'error2!!!!')
-
-        except IndexError as e:
-            print(e, 'error1!!!!')
-
     def show_board(self):
         if self.hid:
             print('  | 1 | 2 | 3 | 4 | 5 | 6 |')
@@ -149,51 +125,13 @@ class Player:
         self.my_board = Board(hid=hid)
         self.opponent_board = Board(hid=hid)
 
-    def ask(self):
-        pass
-
-    def move(self, opponent_board):
-        print('Запуск move Player\n')
-        point = self.ask()
-        if point is None:
-            print('Значение ноне повторный пуск ask Player\n')
-            self.move(opponent_board)
-        else:
-            print('Стреляю!', point)  # проверочная
-            opponent_board.shot(point)
-
-    @staticmethod
-    def correct_coordinates(point):
-        print('Запуск correct_coordinates Player\n')
-        return len(point) == 2 and all(map(str.isdigit, point)) and all(
-            map(lambda x: int(x) in range(1, Board.LEN_MATRIX + 1), point))
-
-
-class User(Player):
-    def ask(self):
-        print('Запуск ask User\n')
-        print("Ваш ход.")
-        point = input(text_coordinates).split()
-
-        if self.correct_coordinates(point):
-            return tuple(int(x) - 1 for x in point)
-        else:
-            print('Некорректный ввод координат!')
-            self.ask()
-
-
-class AI(Player):
-    def ask(self):
-        print('Запуск ask AI\n')
-        print("Ход компьютера.")
-        return randint(0, 5), randint(0, 5)
-
 
 class Game:
     def __init__(self):
         self.tuple_ships = (3, 2, 2, 1, 1, 1, 1)
-        self.user = User()
-        self.ai = AI()
+
+        self.user = Player()
+        self.ai = Player()
         self.user_board = self.user.my_board
         self.ai_board = self.ai.my_board
 
@@ -215,40 +153,35 @@ class Game:
                     ship = Ship(self.tuple_ships[ind], dot)
                     board.add_ship(ship)
 
-            except (BoardOutException, AddShipException):  # as e:
-                # print(e)
-                pass
+            except (BoardOutException, AddShipException) as e:
+                print(e, count, '!!!!!!!!')
 
             else:
+                # проверочный блок
+                print(f'Корабль №{ind + 1} поставлен на нач координат {point[0] + 1, point[1] + 1}, попытка №{count}\n')
+                board.show_board()
+                #########
                 board.ship_list.append(ship)
                 ind += 1
-
+        print('создание кончилось!')
         if len(board.ship_list) != len(self.tuple_ships):
             board.ship_list.clear()
             board.create_empty_board()
             self.random_board(board)
+        else:
+            print('удалось')
 
-    @staticmethod
-    def greet():
-        print('Добро пожаловать в игру "Морской бой!"\n')
-
-    def loop(self):
-        while True:
-            self.user.move(self.ai_board)
-            self.ai.move(self.user_board)
-
-    def start(self):
-        self.greet()
-        self.loop()
-
-
-# if __name__ == '__main__':
-#     game = Game()
-#     game.start()
 
 g = Game()
 g.random_board(g.user_board)
 g.user_board.show_board()
 
+g.random_board(g.ai_board)
+g.ai_board.show_board()
 
-
+# ship_1 = Ship(3, Dot(1, 1))
+# ship_2 = Ship(2, Dot(2, 4))
+# boar = Board()
+# boar.add_ship(ship_1)
+# boar.add_ship(ship_2)
+# boar.show_board()
